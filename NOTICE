@@ -1,0 +1,20 @@
+Privacy Kit Lite
+Copyright 2026 Privacy Kit Lite contributors
+
+This product uses libxposed API, service, and interface components, version 102.0.0.
+Copyright the libxposed contributors.
+Licensed under the Apache License, Version 2.0.
+
+Project information and license:
+https://github.com/libxposed/api
+https://github.com/libxposed/service
+https://www.apache.org/licenses/LICENSE-2.0
+
+This product includes the Kotlin standard library, version 2.2.10, and JetBrains
+annotations. Copyright JetBrains s.r.o. and contributors. These components are
+licensed under the Apache License, Version 2.0.
+
+Project information and license:
+https://github.com/JetBrains/kotlin
+https://github.com/JetBrains/java-annotations
+https://www.apache.org/licenses/LICENSE-2.0

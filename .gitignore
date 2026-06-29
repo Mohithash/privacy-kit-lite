@@ -1,0 +1,25 @@
+# Gradle / Android
+.gradle/
+build/
+**/build/
+captures/
+
+# Local machine state
+local.properties
+.idea/
+.kotlin/
+*.iml
+
+# Secrets and release artifacts
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.env
+*.apk
+*.aab
+
+# Misc
+.DS_Store
+Thumbs.db
