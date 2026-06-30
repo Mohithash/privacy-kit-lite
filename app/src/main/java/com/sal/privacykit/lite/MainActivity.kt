@@ -25,14 +25,16 @@ import com.sal.privacykit.lite.data.LiteProfileStore
 import com.sal.privacykit.lite.model.IdentifierCatalog
 import com.sal.privacykit.lite.model.IdentifierRuleType
 import com.sal.privacykit.lite.model.IdentifierValueGenerator
+import com.sal.privacykit.lite.model.LiteAppAssignment
 import com.sal.privacykit.lite.model.LiteProfile
+import com.sal.privacykit.lite.model.LiteState
 import com.sal.privacykit.lite.xposed.XposedConfigExporter
 
 class MainActivity : Activity() {
     private lateinit var store: LiteProfileStore
     private lateinit var root: LinearLayout
-    private var profiles: List<LiteProfile> = emptyList()
-    private var selectedPackage: String? = null
+    private var state = LiteState(emptyList(), emptyList())
+    private var selectedProfileId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,8 +47,8 @@ class MainActivity : Activity() {
                 render()
             }
         }
-        profiles = store.load()
-        selectedPackage = profiles.firstOrNull()?.packageName
+        state = store.loadState()
+        selectedProfileId = state.profiles.firstOrNull()?.id
         render()
     }
 
@@ -64,46 +66,56 @@ class MainActivity : Activity() {
         setContentView(ScrollView(this).apply { addView(root) })
 
         title("Privacy Kit Lite")
-        note("Local LSPosed spoofing. No network access, account system, telemetry, browser, AI, or premium code.")
+        note("Local LSPosed spoofing with reusable app profiles. No network access, account system, telemetry, browser, AI, or premium code.")
         status()
         actions()
 
-        if (profiles.isEmpty()) {
+        if (state.profiles.isEmpty()) {
             emptyState()
-        } else {
-            profilePicker()
-            selectedProfile()?.let(::profileEditor)
+            return
         }
+        profilePicker()
+        val profile = state.selectedProfile(selectedProfileId) ?: return
+        selectedProfileId = profile.id
+        profileTools(profile)
+        assignedApps(profile)
+        profileEditor(profile)
     }
 
     private fun status() {
         val connected = LiteServices.xposedConnection.service != null
-        note(if (connected) "LSPosed service: connected" else "LSPosed service: not connected")
+        val apps = state.assignments.count { it.enabled }
+        note(if (connected) "LSPosed service: connected. Exported apps: $apps" else "LSPosed service: not connected. Config is stored locally.")
     }
 
     private fun actions() {
         row {
-            button("Add app") { showAppPicker() }
+            button("New profile") { showProfileNameDialog("New profile", "Lite Profile ${state.profiles.size + 1}") { createProfile(it) } }
+            button("Add app") { selectedProfile()?.let(::showAppPicker) ?: toast("Create a profile first") }
             button("Export") { exportProfiles(showToast = true) }
         }
     }
 
     private fun emptyState() {
-        section("No apps selected")
-        note("Add an installed app, approve its LSPosed scope, then restart that app process.")
+        section("No profiles yet")
+        note("Create a profile, add installed apps to it, approve LSPosed scope, then restart those app processes.")
     }
 
     private fun profilePicker() {
-        section("Selected app")
-        val labels = profiles.map { "${it.label} (${it.packageName})" }
+        section("Profiles")
+        val labels = state.profiles.map { profile ->
+            val count = state.assignmentsFor(profile.id).size
+            "${profile.name} ($count apps)"
+        }
+        val selectedIndex = state.profiles.indexOfFirst { it.id == selectedProfileId }.coerceAtLeast(0)
         val spinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, labels)
-            setSelection(profiles.indexOfFirst { it.packageName == selectedPackage }.coerceAtLeast(0))
+            setSelection(selectedIndex)
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    val packageName = profiles[position].packageName
-                    if (packageName != selectedPackage) {
-                        selectedPackage = packageName
+                    val profileId = state.profiles[position].id
+                    if (profileId != selectedProfileId) {
+                        selectedProfileId = profileId
                         render()
                     }
                 }
@@ -114,25 +126,23 @@ class MainActivity : Activity() {
         root.addView(spinner, matchWrap())
     }
 
-    private fun profileEditor(profile: LiteProfile) {
-        section(profile.label)
-        note("${profile.packageName} - ${profile.enabledCount()} spoofed values")
+    private fun profileTools(profile: LiteProfile) {
         row {
-            button("Request scope") {
-                LiteServices.xposedConnection.requestScope(profile.packageName) { ok, message ->
-                    runOnUiThread {
-                        toast(if (ok) "Scope request approved or already scoped" else message ?: "Scope request failed")
-                    }
+            button("Rename") {
+                showProfileNameDialog("Rename profile", profile.name) { name ->
+                    updateProfile(profile.copy(name = name.ifBlank { profile.name }))
                 }
             }
+            button("Duplicate") {
+                val copy = store.duplicate(profile, "${profile.name} Copy")
+                state = state.copy(profiles = state.profiles + copy)
+                selectedProfileId = copy.id
+                persistAndRender()
+            }
+            button("Delete") { confirmDeleteProfile(profile) }
             button("Regenerate") {
                 updateProfile(store.regenerate(profile))
                 exportProfiles(showToast = false)
-            }
-            button("Delete") {
-                profiles = profiles.filterNot { it.packageName == profile.packageName }
-                selectedPackage = profiles.firstOrNull()?.packageName
-                persistAndRender()
             }
         }
 
@@ -146,7 +156,51 @@ class MainActivity : Activity() {
             }
         }
         root.addView(enabledSwitch, matchWrap())
+    }
 
+    private fun assignedApps(profile: LiteProfile) {
+        section("Assigned apps")
+        val assignments = state.assignmentsFor(profile.id)
+        if (assignments.isEmpty()) {
+            note("No apps use this profile yet.")
+            return
+        }
+        assignments.forEach { assignment ->
+            val box = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, dp(8), 0, dp(8))
+            }
+            box.addView(TextView(this).apply {
+                text = "${assignment.label}\n${assignment.packageName}"
+                setTextColor(Color.WHITE)
+                textSize = 15f
+            })
+            val enabledSwitch = Switch(this).apply {
+                text = "Assignment enabled"
+                isChecked = assignment.enabled
+                setTextColor(Color.LTGRAY)
+                setOnCheckedChangeListener { _, checked ->
+                    updateAssignment(assignment.copy(enabled = checked), rerender = false)
+                    exportProfiles(showToast = false)
+                }
+            }
+            box.addView(enabledSwitch, matchWrap())
+            box.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                button("Scope") { requestScope(assignment.packageName) }
+                button("Move") { showMoveAssignmentDialog(assignment) }
+                button("Remove") {
+                    state = state.copy(assignments = state.assignments.filterNot { it.packageName == assignment.packageName })
+                    persistAndRender()
+                }
+            }, matchWrap())
+            root.addView(box, matchWrap())
+        }
+    }
+
+    private fun profileEditor(profile: LiteProfile) {
+        section("Spoof data")
+        note("${profile.enabledCount()} generated or custom values are active when this profile and its app assignment are enabled.")
         IdentifierCatalog.items.forEach { item ->
             identifierRow(profile, item.key, item.label)
         }
@@ -183,7 +237,7 @@ class MainActivity : Activity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val rule = rules[position]
                 valueEdit.isEnabled = rule == IdentifierRuleType.CUSTOM
-                val current = currentProfile(profile.packageName) ?: return
+                val current = currentProfile(profile.id) ?: return
                 if (current.rules[key] == rule) return
                 val values = if (rule == IdentifierRuleType.STATIC) {
                     val seed = IdentifierValueGenerator.seedFor(current.id + System.nanoTime(), key)
@@ -209,7 +263,7 @@ class MainActivity : Activity() {
 
             override fun afterTextChanged(text: Editable?) {
                 val value = text?.toString().orEmpty()
-                val current = currentProfile(profile.packageName) ?: return
+                val current = currentProfile(profile.id) ?: return
                 if (current.values[key] == value) return
                 updateProfile(current.copy(values = current.values + (key to value)), rerender = false)
                 exportProfiles(showToast = false)
@@ -219,8 +273,9 @@ class MainActivity : Activity() {
         root.addView(row, matchWrap())
     }
 
-    private fun showAppPicker() {
+    private fun showAppPicker(profile: LiteProfile) {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
+        val assignedPackages = state.assignments.map { it.packageName }.toSet()
         val apps = packageManager.queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY)
             .map {
                 val info = it.activityInfo
@@ -228,31 +283,89 @@ class MainActivity : Activity() {
                 LaunchableApp(info.packageName, label)
             }
             .distinctBy { it.packageName }
-            .filterNot { it.packageName == packageName || profiles.any { profile -> profile.packageName == it.packageName } }
+            .filterNot { it.packageName == packageName || it.packageName in assignedPackages }
             .sortedBy { it.label.lowercase() }
         if (apps.isEmpty()) {
-            toast("No launchable apps available")
+            toast("No unassigned launchable apps available")
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("Add app")
+            .setTitle("Add app to ${profile.name}")
             .setItems(apps.map { "${it.label} (${it.packageName})" }.toTypedArray()) { _, which ->
                 val app = apps[which]
-                val profile = store.create(app.packageName, app.label)
-                profiles = (profiles + profile).sortedBy { it.label.lowercase() }
-                selectedPackage = app.packageName
+                state = state.copy(
+                    assignments = state.assignments + LiteAppAssignment(
+                        packageName = app.packageName,
+                        label = app.label,
+                        profileId = profile.id,
+                    ),
+                )
                 persistAndRender()
-                LiteServices.xposedConnection.requestScope(app.packageName) { ok, message ->
-                    runOnUiThread {
-                        toast(if (ok) "Scope request approved or already scoped" else message ?: "Open LSPosed and add scope manually")
-                    }
-                }
+                requestScope(app.packageName)
             }
             .show()
     }
 
+    private fun showMoveAssignmentDialog(assignment: LiteAppAssignment) {
+        if (state.profiles.size < 2) {
+            toast("Create another profile first")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Move app to profile")
+            .setItems(state.profiles.map { it.name }.toTypedArray()) { _, which ->
+                updateAssignment(assignment.copy(profileId = state.profiles[which].id))
+            }
+            .show()
+    }
+
+    private fun showProfileNameDialog(title: String, initial: String, onDone: (String) -> Unit) {
+        val input = EditText(this).apply {
+            setText(initial)
+            setSingleLine(true)
+            selectAll()
+        }
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(input)
+            .setPositiveButton("Save") { _, _ -> onDone(input.text?.toString().orEmpty()) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun createProfile(name: String) {
+        val profile = store.createProfile(name)
+        state = state.copy(profiles = state.profiles + profile)
+        selectedProfileId = profile.id
+        persistAndRender()
+    }
+
+    private fun confirmDeleteProfile(profile: LiteProfile) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete ${profile.name}?")
+            .setMessage("Apps assigned to this profile will be removed from the exported LSPosed config.")
+            .setPositiveButton("Delete") { _, _ ->
+                state = state.copy(
+                    profiles = state.profiles.filterNot { it.id == profile.id },
+                    assignments = state.assignments.filterNot { it.profileId == profile.id },
+                )
+                selectedProfileId = state.profiles.firstOrNull()?.id
+                persistAndRender()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun requestScope(packageName: String) {
+        LiteServices.xposedConnection.requestScope(packageName) { ok, message ->
+            runOnUiThread {
+                toast(if (ok) "Scope request approved or already scoped" else message ?: "Open LSPosed and add scope manually")
+            }
+        }
+    }
+
     private fun exportProfiles(showToast: Boolean): Boolean {
-        val ok = XposedConfigExporter.export(LiteServices.xposedConnection, profiles)
+        val ok = XposedConfigExporter.export(LiteServices.xposedConnection, state)
         if (showToast) {
             val message = when {
                 ok -> "Exported to LSPosed"
@@ -265,20 +378,28 @@ class MainActivity : Activity() {
     }
 
     private fun persistAndRender() {
-        store.save(profiles)
+        store.saveState(state)
         exportProfiles(showToast = false)
         render()
     }
 
     private fun updateProfile(profile: LiteProfile, rerender: Boolean = true) {
-        profiles = profiles.map { if (it.packageName == profile.packageName) profile else it }
-        store.save(profiles)
+        state = state.copy(profiles = state.profiles.map { if (it.id == profile.id) profile else it })
+        store.saveState(state)
+        exportProfiles(showToast = false)
         if (rerender) render()
     }
 
-    private fun selectedProfile(): LiteProfile? = profiles.firstOrNull { it.packageName == selectedPackage } ?: profiles.firstOrNull()
+    private fun updateAssignment(assignment: LiteAppAssignment, rerender: Boolean = true) {
+        state = state.copy(assignments = state.assignments.map { if (it.packageName == assignment.packageName) assignment else it })
+        store.saveState(state)
+        exportProfiles(showToast = false)
+        if (rerender) render()
+    }
 
-    private fun currentProfile(packageName: String): LiteProfile? = profiles.firstOrNull { it.packageName == packageName }
+    private fun selectedProfile(): LiteProfile? = state.selectedProfile(selectedProfileId)
+
+    private fun currentProfile(id: Long): LiteProfile? = state.profiles.firstOrNull { it.id == id }
 
     private fun ruleLabel(rule: IdentifierRuleType): String = when (rule) {
         IdentifierRuleType.REAL -> "Use real value"

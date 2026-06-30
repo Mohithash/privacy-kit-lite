@@ -6,8 +6,8 @@ These notes describe the source tree; they are not an F-Droid submission or buil
 
 - Application ID: `com.sal.privacykit.lite`
 - Name: Privacy Kit Lite
-- Version name: `0.1.0`
-- Version code: `1`
+- Version name: `0.2.0`
+- Version code: `2`
 - Minimum SDK: 26
 - Target SDK: 37
 - Compile SDK: 37
@@ -23,7 +23,7 @@ The app requires root and a compatible LSPosed framework to perform its primary 
 - libxposed API/service 102.0.0 from Maven Central
 - Android SDK Platform 37
 
-No signing material, proprietary Maven repository, opaque prebuilt application binary, or machine-specific SDK path is committed.
+No private signing material, proprietary Maven repository, opaque prebuilt application binary, or machine-specific SDK path is committed. The Gradle release build uses Android's standard debug signing configuration only to make GitHub APK assets installable; F-Droid should ignore that trust model and sign its own reproducible build.
 
 ## Privacy And Network
 

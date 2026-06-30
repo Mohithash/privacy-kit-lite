@@ -12,8 +12,7 @@ class RegenerateGeneratedValuesTest {
     fun regenerationChangesOnlyGeneratedValues() {
         val profile = LiteProfile(
             id = 42,
-            packageName = "example.app",
-            label = "Example",
+            name = "Example",
             enabled = true,
             rules = mapOf(
                 "android_id" to IdentifierRuleType.STATIC,

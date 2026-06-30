@@ -10,8 +10,7 @@ class LiteProfileTest {
     fun enabledCountExcludesRealAndBlankValues() {
         val profile = LiteProfile(
             id = 1,
-            packageName = "example.app",
-            label = "Example",
+            name = "Example",
             enabled = true,
             rules = mapOf(
                 "real" to IdentifierRuleType.REAL,

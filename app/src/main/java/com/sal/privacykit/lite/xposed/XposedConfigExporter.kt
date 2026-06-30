@@ -2,28 +2,39 @@ package com.sal.privacykit.lite.xposed
 
 import com.sal.privacykit.lite.model.IdentifierRuleType
 import com.sal.privacykit.lite.model.LiteProfile
+import com.sal.privacykit.lite.model.LiteState
 import org.json.JSONObject
 
 object XposedConfigExporter {
     const val PREFS_GROUP = "xposed_config"
     const val KEY_CONFIG = "config_json"
 
-    fun export(connection: XposedServiceConnection, profiles: List<LiteProfile>): Boolean {
+    fun export(connection: XposedServiceConnection, state: LiteState): Boolean {
         val service = connection.service ?: return false
         return runCatching {
-            val root = JSONObject()
-            profiles.filter { it.enabled }.forEach { profile ->
-                root.put(profile.packageName, profileToJson(profile))
-            }
             service.getRemotePreferences(PREFS_GROUP)
                 .edit()
-                .putString(KEY_CONFIG, root.toString())
+                .putString(KEY_CONFIG, exportJson(state).toString())
                 .apply()
             true
         }.getOrDefault(false)
     }
 
-    private fun profileToJson(profile: LiteProfile): JSONObject {
+    internal fun exportJson(state: LiteState): JSONObject {
+        val profilesById = state.profiles.associateBy { it.id }
+        val root = JSONObject()
+        state.assignments
+            .filter { it.enabled }
+            .forEach { assignment ->
+                val profile = profilesById[assignment.profileId] ?: return@forEach
+                if (profile.enabled) {
+                    root.put(assignment.packageName, profileToJson(profile))
+                }
+            }
+        return root
+    }
+
+    internal fun profileToJson(profile: LiteProfile): JSONObject {
         val identifiers = JSONObject()
         profile.rules.forEach { (key, rule) ->
             identifiers.put(
@@ -36,6 +47,7 @@ object XposedConfigExporter {
         }
         return JSONObject()
             .put("profileId", profile.id)
+            .put("profileName", profile.name)
             .put("identifiers", identifiers)
     }
 }

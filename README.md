@@ -4,8 +4,8 @@ Privacy Kit Lite is a small, local-only Android module that uses LSPosed to repl
 
 ## Features
 
-- Select a launchable installed app and request LSPosed scope for it.
-- Keep one independent local profile for each selected app.
+- Create, rename, duplicate, delete, and enable or disable reusable local profiles.
+- Assign one or more launchable installed apps to a profile and request LSPosed scope for each app.
 - Use the real value, a locally generated value, or a manually entered value for each supported identifier.
 - Regenerate an entire profile without contacting a server.
 - Store profiles on-device and export them through libxposed RemotePreferences.
@@ -31,9 +31,10 @@ Supported hooks include:
 
 1. Build and install the APK.
 2. Enable Privacy Kit Lite in LSPosed.
-3. Open Privacy Kit Lite and choose **Add app**.
-4. Approve the scope request. If the request is unavailable, add the target app to the module scope in LSPosed manually.
-5. Select generated or custom values, then restart the target app process.
+3. Open Privacy Kit Lite and create or select a profile.
+4. Choose **Add app** to assign an installed app to that profile.
+5. Approve the scope request. If the request is unavailable, add the target app to the module scope in LSPosed manually.
+6. Select generated or custom values, then restart the target app process.
 
 The connection label reports only whether the app can currently reach the LSPosed service. Privacy Kit Lite does not collect runtime hook history and does not claim that a hook succeeded until the target app calls that API and you verify its result.
 
@@ -51,7 +52,7 @@ Profiles remain on the device and are shared only through LSPosed's local Remote
 - Identifier replacement is best-effort. Apps can use native code, hardware-backed attestation, server-side correlation, undocumented APIs, or other signals that this module does not intercept.
 - Some hooks depend on Android version and vendor implementation.
 - This app is not a malware sandbox and does not provide complete device isolation.
-- There is one profile per selected package. Multi-profile switching, backup/restore, custom hook definitions, location simulation, browser isolation, and runtime history are outside the Lite scope.
+- Each installed app has one active profile assignment at a time. Backup/restore, custom hook definitions, location simulation, browser isolation, and runtime history are outside the Lite scope.
 
 ## Build
 
@@ -66,7 +67,7 @@ Prerequisites:
 
 On Windows, use `gradlew.bat`. APKs are written beneath `app/build/outputs/apk/`.
 
-The repository intentionally contains no signing key. F-Droid or another distributor should build and sign releases from source.
+The public GitHub APK is signed with the standard Android debug signing configuration so it can be installed directly for testing. This is not a private production key and should not be treated as an authenticity guarantee. F-Droid or another distributor should build and sign releases from source with its own key.
 
 ## Source And Dependencies
 
