@@ -20,7 +20,6 @@ data class CustomHookRuleSnapshot(
     val argTypes: String,
     val rule: String,
     val value: String,
-    val randomValues: List<String>,
     val isDocumentationOnly: Boolean,
 ) {
     val scope: CustomHookScope = if (packageName.isBlank()) CustomHookScope.GLOBAL else CustomHookScope.APP
@@ -64,7 +63,6 @@ data class CustomHookRuleDraft(
     val argTypes: String = "",
     val rule: String = "static",
     val value: String = "",
-    val randomValues: String = "",
     val preservedRaw: JSONObject? = null,
 )
 
@@ -119,7 +117,6 @@ object CustomHooksDocumentParser {
             argTypes = rule.argTypes,
             rule = rule.rule,
             value = rule.value,
-            randomValues = rule.randomValues.joinToString("\n"),
             preservedRaw = JSONObject(rule.raw.toString()),
         )
 
@@ -143,33 +140,14 @@ object CustomHooksDocumentParser {
             put("member", draft.member.trim())
             put("type", draft.type.trim())
             put("argTypes", draft.argTypes.trim())
-            put("rule", draft.rule.trim())
+            put("rule", "static")
             remove("randomValues")
-            remove("value")
-            when (draft.rule.trim()) {
-                "static" -> put("value", draft.value)
-                "random_per_launch", "random_daily" -> put(
-                    "randomValues",
-                    JSONArray().apply {
-                        draft.randomValues.lineSequence()
-                            .map { it.trim() }
-                            .filter { it.isNotEmpty() }
-                            .forEach { put(it) }
-                    },
-                )
-            }
+            put("value", draft.value)
         }
 
     fun toMutableArray(rawJson: String): JSONArray = JSONArray(rawJson.ifBlank { "[]" }.trim())
 
     private fun JSONObject.toRuleSnapshot(index: Int): CustomHookRuleSnapshot {
-        val randomValues = optJSONArray("randomValues")?.let { values ->
-            buildList {
-                for (valueIndex in 0 until values.length()) {
-                    values.optString(valueIndex).takeIf { it.isNotBlank() }?.let(::add)
-                }
-            }
-        }.orEmpty()
         return CustomHookRuleSnapshot(
             index = index,
             raw = JSONObject(toString()),
@@ -182,7 +160,6 @@ object CustomHooksDocumentParser {
             argTypes = optString("argTypes").trim(),
             rule = optString("rule", "static").trim().ifBlank { "static" },
             value = optString("value"),
-            randomValues = randomValues,
             isDocumentationOnly = !has("className") && (has("_section") || has("_note")),
         )
     }

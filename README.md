@@ -6,7 +6,7 @@ Privacy Kit Lite is the public, local-only edition of Privacy Kit. It keeps the 
 
 - Create, rename, duplicate, delete, and enable or disable reusable local profiles.
 - Assign one or more launchable installed apps to a profile and request LSPosed scope for each app.
-- Use the real value, a locally generated value, or a manually entered value for each supported identifier.
+- Use the real value, a static generated-once value, or a manually entered custom value for each supported identifier.
 - Store profiles on-device and export them through libxposed RemotePreferences.
 - Scroll through long app pickers, profile selectors, and identifier lists.
 - Manage developer-only custom hook JSON from Developer Settings.
@@ -32,7 +32,7 @@ Supported hooks include:
 3. Open Privacy Kit Lite and create or select a profile.
 4. Choose **Add app** to assign an installed app to that profile.
 5. Approve the scope request. If the request is unavailable, add the target app to the module scope in LSPosed manually.
-6. Select generated or custom values, then restart the target app process.
+6. Select real, static generated-once, or custom values, then restart the target app process.
 
 The connection label reports only whether the app can currently reach the LSPosed service. Privacy Kit Lite does not collect runtime hook events and does not claim that a hook succeeded until the target app calls that API and you verify its result.
 
@@ -49,9 +49,9 @@ Profiles remain on the device and are shared only through LSPosed's local Remote
 
 - Identifier replacement is best-effort. Apps can use native code, hardware-backed attestation, server-side correlation, undocumented APIs, or other signals that this module does not intercept.
 - Some hooks depend on Android version and vendor implementation.
-- This app is not a malware sandbox and does not provide complete device isolation.
+- This app hooks configured identifier values only. It is not a malware sandbox and does not provide app or device isolation.
 - Each installed app has one active profile assignment at a time.
-- Full-device isolation, broad backup packages, movement simulation, and event dashboards are outside the Lite scope.
+- Broad backup packages, movement simulation, and event dashboards are outside the Lite scope.
 
 ## Build
 

@@ -1,0 +1,3 @@
+Remove profile modes and per-launch or daily random identifier modes.
+Keep identifier choices focused on real, static generated-once, and custom values.
+Update profile export and hook behavior for the simplified Lite scope.

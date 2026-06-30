@@ -233,7 +233,7 @@ private fun ProfileRow(
 
     BasicComponent(
         title = profile.name,
-        summary = "$deviceLabel - ${profile.profileMode.label}",
+        summary = deviceLabel,
         startAction = {
             Box(
                 modifier = Modifier.size(40.dp).background(MiuixTheme.colorScheme.secondaryContainer, CircleShape),

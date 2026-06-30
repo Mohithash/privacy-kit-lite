@@ -72,7 +72,6 @@ object XposedConfigExporter {
             }
         return JSONObject().apply {
             put("profileId", profile.id)
-            put("profileMode", profile.profileMode.name)
             put("deviceModel", profile.deviceModel(template.name))
             put("deviceManufacturer", profile.deviceManufacturer(template.manufacturer))
             put("identifiers", identifiers)

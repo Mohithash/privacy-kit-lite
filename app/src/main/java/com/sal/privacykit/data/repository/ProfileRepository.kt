@@ -26,9 +26,14 @@ private fun decodeRules(raw: String): Map<String, IdentifierRuleType> {
     return raw.split(";").mapNotNull { pair ->
         val parts = pair.split("=")
         if (parts.size != 2 || parts[0] !in IdentifierCatalog.allowedKeys) return@mapNotNull null
-        val rule = runCatching { IdentifierRuleType.valueOf(parts[1]) }.getOrNull() ?: return@mapNotNull null
+        val rule = decodeRuleType(parts[1]) ?: return@mapNotNull null
         parts[0] to rule
     }.toMap()
+}
+
+private fun decodeRuleType(raw: String): IdentifierRuleType? = when (raw) {
+    "RANDOM_PER_LAUNCH", "RANDOM_DAILY" -> IdentifierRuleType.STATIC
+    else -> runCatching { IdentifierRuleType.valueOf(raw) }.getOrNull()
 }
 
 private fun encodeValues(values: Map<String, String>): String {
@@ -119,14 +124,13 @@ class ProfileRepository(
         name: String,
         appId: String,
         deviceTemplateId: String,
-        profileMode: ProfileMode = ProfileMode.ISOLATED,
     ): Long {
         val id = dao.insert(
             ProfileEntity(
                 name = name,
                 appId = appId,
                 deviceTemplateId = deviceTemplateId,
-                profileMode = profileMode.name,
+                profileMode = ProfileMode.ISOLATED.name,
                 identifierRules = encodeRules(defaultRules()),
                 createdAt = System.currentTimeMillis(),
             ),
@@ -199,11 +203,6 @@ class ProfileRepository(
                 identifierValues = encodeValues(updatedValues),
             ),
         )
-        syncExport()
-    }
-
-    suspend fun updateProfileMode(profile: Profile, mode: ProfileMode) {
-        dao.update(toEntity(profile).copy(profileMode = mode.name))
         syncExport()
     }
 
@@ -281,7 +280,6 @@ class ProfileRepository(
                     put("name", profile.name)
                     put("appId", profile.appId)
                     put("deviceTemplateId", profile.deviceTemplateId)
-                    put("profileMode", profile.profileMode.name)
                     put("identifierRules", encodeRules(profile.identifierRules))
                     put("identifierValues", encodeValues(profile.identifierValues))
                     put("createdAt", profile.createdAt)

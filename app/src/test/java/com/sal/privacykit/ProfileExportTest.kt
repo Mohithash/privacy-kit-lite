@@ -47,7 +47,7 @@ class ProfileExportTest {
         )
 
         assertEquals(5L, exported.getLong("profileId"))
-        assertEquals(ProfileMode.ISOLATED.name, exported.getString("profileMode"))
+        assertFalse(exported.has("profileMode"))
         val identifiers = exported.getJSONObject("identifiers")
         assertEquals("custom-id", identifiers.getJSONObject("android_id").getString("value"))
         assertFalse(identifiers.has("firebase_installation_id"))

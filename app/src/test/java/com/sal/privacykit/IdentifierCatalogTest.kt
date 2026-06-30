@@ -1,6 +1,7 @@
 package com.sal.privacykit
 
 import com.sal.privacykit.data.model.IdentifierCatalog
+import com.sal.privacykit.data.model.IdentifierRuleType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -36,5 +37,14 @@ class IdentifierCatalogTest {
 
         assertTrue(forbiddenKeys.none { it in IdentifierCatalog.allowedKeys })
         assertFalse(IdentifierCatalog.allowedKeys.isEmpty())
+    }
+
+    @Test
+    fun identifierRulesOnlyExposeRealStaticAndCustom() {
+        assertEquals(
+            listOf(IdentifierRuleType.REAL, IdentifierRuleType.STATIC, IdentifierRuleType.CUSTOM),
+            IdentifierRuleType.entries.toList(),
+        )
+        assertEquals(IdentifierRuleType.STATIC, IdentifierCatalog.itemByKey("advertising_id").defaultRule)
     }
 }

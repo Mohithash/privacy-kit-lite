@@ -11,7 +11,7 @@ object CustomHookValidator {
     private val classNameRegex = Regex("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*")
     private val memberRegex = Regex("[A-Za-z_$][A-Za-z0-9_$]*")
     private val allowedTypes = setOf("field", "method")
-    private val allowedRules = setOf("static", "random_per_launch", "random_daily")
+    private val allowedRules = setOf("static")
 
     data class Result(val isValid: Boolean, val message: String? = null) {
         companion object {
@@ -67,7 +67,7 @@ object CustomHookValidator {
             if (member.isNotBlank() && !memberRegex.matches(member)) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber has an invalid member name.")
             if (type.isBlank()) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber is missing type.")
             if (type.isNotBlank() && type !in allowedTypes) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber type must be \"field\" or \"method\".")
-            if (hookRule !in allowedRules) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber rule must be static, random_per_launch, or random_daily.")
+            if (hookRule !in allowedRules) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber rule must be static.")
 
             if (packageName.isBlank()) {
                 if (enabled && !rule.optBoolean("allowGlobal", false)) {
@@ -82,29 +82,13 @@ object CustomHookValidator {
                 if (argError != null) issues += ValidationIssue(ruleNumber, argError.message.orEmpty())
             }
 
-            if (hookRule == "static") {
-                if (!rule.has("value")) {
-                    issues += ValidationIssue(ruleNumber, "Rule $ruleNumber is missing value.")
-                }
-                val value = rule.opt("value")
-                if (value !is String) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber value must be a string.")
-                if (value is String && value.length > MAX_STRING_LENGTH) {
-                    issues += ValidationIssue(ruleNumber, "Rule $ruleNumber value is too long.")
-                }
-            } else {
-                val values = rule.optJSONArray("randomValues")
-                    ?: run {
-                        issues += ValidationIssue(ruleNumber, "Rule $ruleNumber needs randomValues for $hookRule.")
-                        null
-                    }
-                if (values != null && values.length() == 0) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber randomValues cannot be empty.")
-                if (values != null) {
-                    for (valueIndex in 0 until values.length()) {
-                        val value = values.opt(valueIndex)
-                        if (value !is String) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber randomValues must contain strings only.")
-                        if (value is String && value.length > MAX_STRING_LENGTH) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber randomValues entry is too long.")
-                    }
-                }
+            if (!rule.has("value")) {
+                issues += ValidationIssue(ruleNumber, "Rule $ruleNumber is missing value.")
+            }
+            val value = rule.opt("value")
+            if (value !is String) issues += ValidationIssue(ruleNumber, "Rule $ruleNumber value must be a string.")
+            if (value is String && value.length > MAX_STRING_LENGTH) {
+                issues += ValidationIssue(ruleNumber, "Rule $ruleNumber value is too long.")
             }
 
             if (enabled) {

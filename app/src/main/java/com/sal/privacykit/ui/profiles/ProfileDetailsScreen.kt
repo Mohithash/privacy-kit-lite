@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -64,7 +63,6 @@ fun ProfileDetailsScreen(
     onBack: () -> Unit,
     onDeviceTemplateClick: (Long) -> Unit,
     onIdentifiersClick: (Long) -> Unit,
-    onProfileModeClick: (Long) -> Unit,
     onAppsUsingProfileClick: (String) -> Unit,
     onLaunchOptionsClick: (Long) -> Unit,
 ) {
@@ -224,14 +222,6 @@ fun ProfileDetailsScreen(
                         title = "Identifiers",
                         value = "${current.configuredIdentifierCount} Configured",
                         onClick = { onIdentifiersClick(profileId) },
-                    )
-                }
-                item {
-                    SettingsRow(
-                        icon = Icons.Filled.Tune,
-                        title = "Profile Mode",
-                        value = current.profileMode.label,
-                        onClick = { onProfileModeClick(profileId) },
                     )
                 }
                 item {

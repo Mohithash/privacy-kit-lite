@@ -30,7 +30,6 @@ import com.sal.privacykit.ui.identifiers.IdentifierRuleScreen
 import com.sal.privacykit.ui.identifiers.IdentifiersScreen
 import com.sal.privacykit.ui.launchoptions.LaunchOptionsScreen
 import com.sal.privacykit.ui.onboarding.OnboardingScreen
-import com.sal.privacykit.ui.profilemode.ProfileModeScreen
 import com.sal.privacykit.ui.profiles.AppProfilesScreen
 import com.sal.privacykit.ui.profiles.ProfileDetailsScreen
 import com.sal.privacykit.ui.profilestab.ProfilesTabScreen
@@ -160,17 +159,9 @@ fun PrivacyKitNavHost(navController: NavHostController = rememberNavController()
                     onBack = { navController.popBackStack() },
                     onDeviceTemplateClick = { id -> navController.navigate(Routes.deviceTemplate(id)) },
                     onIdentifiersClick = { id -> navController.navigate(Routes.identifiers(id)) },
-                    onProfileModeClick = { id -> navController.navigate(Routes.profileMode(id)) },
                     onAppsUsingProfileClick = { appId -> navController.navigate(Routes.appProfiles(appId)) },
                     onLaunchOptionsClick = { id -> navController.navigate(Routes.launchOptions(id)) },
                 )
-            }
-            composable(
-                route = Routes.PROFILE_MODE,
-                arguments = listOf(navArgument("profileId") { type = NavType.LongType }),
-            ) { entry ->
-                val profileId = entry.arguments?.getLong("profileId") ?: return@composable
-                ProfileModeScreen(profileId = profileId, onBack = { navController.popBackStack() })
             }
             composable(
                 route = Routes.LAUNCH_OPTIONS,

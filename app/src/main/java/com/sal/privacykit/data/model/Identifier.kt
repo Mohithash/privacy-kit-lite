@@ -3,8 +3,6 @@ package com.sal.privacykit.data.model
 enum class IdentifierRuleType(val label: String) {
     REAL("Real"),
     STATIC("Static"),
-    RANDOM_PER_LAUNCH("Random Per Launch"),
-    RANDOM_DAILY("Random Daily"),
     CUSTOM("Custom Value"),
 }
 
@@ -30,7 +28,7 @@ object IdentifierCatalog {
         IdentifierGroup(
             title = "Advertising ID",
             items = listOf(
-                IdentifierItem("advertising_id", "Advertising ID", IdentifierRuleType.RANDOM_PER_LAUNCH),
+                IdentifierItem("advertising_id", "Advertising ID", IdentifierRuleType.STATIC),
             ),
         ),
         IdentifierGroup(

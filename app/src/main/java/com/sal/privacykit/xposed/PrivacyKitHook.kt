@@ -6,52 +6,43 @@ import android.os.Parcel
 import android.provider.Settings
 import android.util.Log
 import com.sal.privacykit.data.model.IdentifierRuleType
-import com.sal.privacykit.data.model.IdentifierValueGenerator
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 import org.json.JSONObject
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private const val HOST_PACKAGE = "com.sal.privacykit.lite"
 private const val TAG = "PrivacyKitLiteHook"
 
 class PrivacyKitHook : XposedModule() {
-    private var currentPackageName: String = ""
-
     override fun onPackageReady(param: PackageReadyParam) {
         val packageName = param.packageName
         if (packageName == HOST_PACKAGE) return
-        currentPackageName = packageName
 
         val root = readRootConfig()
         applyCustomHooks(root, packageName, param.classLoader)
 
         val config = root?.optJSONObject(packageName) ?: return
-        if (config.optString("profileMode") == "SHARED") return
         val identifiers = config.optJSONObject("identifiers") ?: return
-        val profileId = config.optLong("profileId", 0)
         val classLoader = param.classLoader
 
-        hookAdvertisingIdBinder(identifiers, profileId)
-        hookAndroidId(identifiers, profileId)
+        hookAdvertisingIdBinder(identifiers)
+        hookAndroidId(identifiers)
 
-        hookBuildField(identifiers, "build_model", "MODEL", profileId)
-        hookBuildField(identifiers, "build_brand", "BRAND", profileId)
-        hookBuildField(identifiers, "build_manufacturer", "MANUFACTURER", profileId)
-        hookBuildField(identifiers, "build_device", "DEVICE", profileId)
-        hookBuildField(identifiers, "build_product", "PRODUCT", profileId)
+        hookBuildField(identifiers, "build_model", "MODEL")
+        hookBuildField(identifiers, "build_brand", "BRAND")
+        hookBuildField(identifiers, "build_manufacturer", "MANUFACTURER")
+        hookBuildField(identifiers, "build_device", "DEVICE")
+        hookBuildField(identifiers, "build_product", "PRODUCT")
 
-        hookWifi(identifiers, profileId, classLoader)
-        hookTelephony(identifiers, profileId)
+        hookWifi(identifiers, classLoader)
+        hookTelephony(identifiers)
     }
 
-    private fun hookAndroidId(identifiers: JSONObject, profileId: Long) {
-        hookMethod(identifiers, "android_id", profileId, "Settings.Secure.getString") { spoofed ->
+    private fun hookAndroidId(identifiers: JSONObject) {
+        hookMethod(identifiers, "android_id", "Settings.Secure.getString") { spoofed ->
             val method = Settings.Secure::class.java.getMethod(
                 "getString",
                 android.content.ContentResolver::class.java,
@@ -63,54 +54,54 @@ class PrivacyKitHook : XposedModule() {
         }
     }
 
-    private fun hookWifi(identifiers: JSONObject, profileId: Long, classLoader: ClassLoader) {
-        hookMethod(identifiers, "wifi_mac", profileId, "WifiInfo.getMacAddress") { spoofed ->
+    private fun hookWifi(identifiers: JSONObject, classLoader: ClassLoader) {
+        hookMethod(identifiers, "wifi_mac", "WifiInfo.getMacAddress") { spoofed ->
             val clazz = Class.forName("android.net.wifi.WifiInfo", false, classLoader)
             clazz.getMethod("getMacAddress") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "wifi_bssid", profileId, "WifiInfo.getBSSID") { spoofed ->
+        hookMethod(identifiers, "wifi_bssid", "WifiInfo.getBSSID") { spoofed ->
             val clazz = Class.forName("android.net.wifi.WifiInfo", false, classLoader)
             clazz.getMethod("getBSSID") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "wifi_ssid", profileId, "WifiInfo.getSSID") { spoofed ->
+        hookMethod(identifiers, "wifi_ssid", "WifiInfo.getSSID") { spoofed ->
             val clazz = Class.forName("android.net.wifi.WifiInfo", false, classLoader)
             clazz.getMethod("getSSID") to XposedInterface.Hooker { "\"$spoofed\"" }
         }
     }
 
-    private fun hookTelephony(identifiers: JSONObject, profileId: Long) {
+    private fun hookTelephony(identifiers: JSONObject) {
         val clazz = android.telephony.TelephonyManager::class.java
-        hookMethod(identifiers, "imei", profileId, "TelephonyManager.getImei") { spoofed ->
+        hookMethod(identifiers, "imei", "TelephonyManager.getImei") { spoofed ->
             clazz.getMethod("getImei") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "imei", profileId, "TelephonyManager.getDeviceId") { spoofed ->
+        hookMethod(identifiers, "imei", "TelephonyManager.getDeviceId") { spoofed ->
             clazz.getMethod("getDeviceId") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "imei", profileId, "TelephonyManager.getImei(slot)") { spoofed ->
+        hookMethod(identifiers, "imei", "TelephonyManager.getImei(slot)") { spoofed ->
             clazz.getMethod("getImei", Int::class.javaPrimitiveType) to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "imei", profileId, "TelephonyManager.getDeviceId(slot)") { spoofed ->
+        hookMethod(identifiers, "imei", "TelephonyManager.getDeviceId(slot)") { spoofed ->
             clazz.getMethod("getDeviceId", Int::class.javaPrimitiveType) to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "subscriber_id", profileId, "TelephonyManager.getSubscriberId") { spoofed ->
+        hookMethod(identifiers, "subscriber_id", "TelephonyManager.getSubscriberId") { spoofed ->
             clazz.getMethod("getSubscriberId") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "iccid", profileId, "TelephonyManager.getSimSerialNumber") { spoofed ->
+        hookMethod(identifiers, "iccid", "TelephonyManager.getSimSerialNumber") { spoofed ->
             clazz.getMethod("getSimSerialNumber") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "phone_number", profileId, "TelephonyManager.getLine1Number") { spoofed ->
+        hookMethod(identifiers, "phone_number", "TelephonyManager.getLine1Number") { spoofed ->
             clazz.getMethod("getLine1Number") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "network_operator", profileId, "TelephonyManager.getNetworkOperator") { spoofed ->
+        hookMethod(identifiers, "network_operator", "TelephonyManager.getNetworkOperator") { spoofed ->
             clazz.getMethod("getNetworkOperator") to XposedInterface.Hooker { spoofed }
         }
-        hookMethod(identifiers, "sim_operator", profileId, "TelephonyManager.getSimOperator") { spoofed ->
+        hookMethod(identifiers, "sim_operator", "TelephonyManager.getSimOperator") { spoofed ->
             clazz.getMethod("getSimOperator") to XposedInterface.Hooker { spoofed }
         }
     }
 
-    private fun hookAdvertisingIdBinder(identifiers: JSONObject, profileId: Long) {
-        val spoofed = resolveValue(identifiers, "advertising_id", profileId) ?: return
+    private fun hookAdvertisingIdBinder(identifiers: JSONObject) {
+        val spoofed = resolveValue(identifiers, "advertising_id") ?: return
         runCatching {
             val binderProxy = Class.forName("android.os.BinderProxy")
             val transact = binderProxy.getDeclaredMethod(
@@ -148,8 +139,8 @@ class PrivacyKitHook : XposedModule() {
         }.onFailure { log("failed to hook Advertising ID binder", it) }
     }
 
-    private fun hookBuildField(identifiers: JSONObject, key: String, fieldName: String, profileId: Long) {
-        val spoofed = resolveValue(identifiers, key, profileId) ?: return
+    private fun hookBuildField(identifiers: JSONObject, key: String, fieldName: String) {
+        val spoofed = resolveValue(identifiers, key) ?: return
         runCatching {
             setStaticFinalField(Build::class.java, fieldName, spoofed)
         }.onFailure { log("failed to spoof Build.$fieldName", it) }
@@ -158,28 +149,22 @@ class PrivacyKitHook : XposedModule() {
     private fun hookMethod(
         identifiers: JSONObject,
         key: String,
-        profileId: Long,
         description: String,
         builder: (String) -> Pair<java.lang.reflect.Method, XposedInterface.Hooker>,
     ) {
-        val spoofed = resolveValue(identifiers, key, profileId) ?: return
+        val spoofed = resolveValue(identifiers, key) ?: return
         runCatching {
             val (method, hooker) = builder(spoofed)
             hook(method).setId("privacykitlite.$description").setExceptionMode(XposedInterface.ExceptionMode.PROTECTIVE).intercept(hooker)
         }.onFailure { log("failed to hook $description", it) }
     }
 
-    private fun resolveValue(identifiers: JSONObject, key: String, profileId: Long): String? {
+    private fun resolveValue(identifiers: JSONObject, key: String): String? {
         val entry = identifiers.optJSONObject(key) ?: return null
         val rule = runCatching { IdentifierRuleType.valueOf(entry.optString("rule")) }.getOrNull() ?: return null
         return when (rule) {
             IdentifierRuleType.REAL -> null
             IdentifierRuleType.STATIC, IdentifierRuleType.CUSTOM -> entry.optString("value").takeIf { it.isNotBlank() }
-            IdentifierRuleType.RANDOM_PER_LAUNCH -> IdentifierValueGenerator.generate(key, System.nanoTime())
-            IdentifierRuleType.RANDOM_DAILY -> {
-                val today = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
-                IdentifierValueGenerator.generate(key, IdentifierValueGenerator.seedFor(profileId, key) + today.toLong())
-            }
         }
     }
 
@@ -201,7 +186,7 @@ class PrivacyKitHook : XposedModule() {
             val className = rule.optString("className").trim()
             val member = rule.optString("member").trim()
             val type = rule.optString("type").trim()
-            val value = resolveCustomHookValue(rule, className, member)
+            val value = resolveCustomHookValue(rule)
             runCatching {
                 val clazz = Class.forName(className, false, classLoader)
                 when (type) {
@@ -227,22 +212,8 @@ class PrivacyKitHook : XposedModule() {
         }
     }
 
-    private fun resolveCustomHookValue(rule: JSONObject, className: String, member: String): String {
-        val ruleType = rule.optString("rule", "static")
-        val randomValues = rule.optJSONArray("randomValues")
-        if (ruleType == "static" || randomValues == null || randomValues.length() == 0) {
-            return rule.optString("value")
-        }
-        val seed = when (ruleType) {
-            "random_per_launch" -> System.nanoTime()
-            "random_daily" -> {
-                val today = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
-                today.toLong() + (className + member + currentPackageName).hashCode()
-            }
-            else -> return rule.optString("value")
-        }
-        val index = (kotlin.math.abs(seed) % randomValues.length()).toInt()
-        return randomValues.optString(index, rule.optString("value"))
+    private fun resolveCustomHookValue(rule: JSONObject): String {
+        return rule.optString("value")
     }
 
     private fun resolveType(name: String): Class<*> = when (name) {

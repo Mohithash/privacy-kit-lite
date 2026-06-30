@@ -6,8 +6,8 @@ These notes describe the source tree; they are not an F-Droid submission or buil
 
 - Application ID: `com.sal.privacykit.lite`
 - Name: Privacy Kit Lite
-- Version name: `0.3.0`
-- Version code: `3`
+- Version name: `0.4.0`
+- Version code: `4`
 - Minimum SDK: 26
 - Target SDK: 37
 - Compile SDK: 37

@@ -176,7 +176,7 @@ fun CustomHooksScreen(onBack: () -> Unit) {
             item {
                 BasicComponent(
                     title = "Supported rule fields",
-                    summary = "enabled, packageName, className, member, type, argTypes, value, rule, randomValues",
+                    summary = "enabled, packageName, className, member, type, argTypes, value, rule",
                     startAction = {
                         Icon(Icons.Filled.Code, contentDescription = null, tint = MiuixTheme.colorScheme.onSurfaceVariantActions)
                     },
