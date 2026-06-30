@@ -1,0 +1,7 @@
+Privacy Kit Lite is the public, local-only edition of Privacy Kit. It lets you create reusable profiles for apps and configure supported Android identifier values for LSPosed runtime hooks.
+
+Supported modes include real values, static generated-once values, and manually entered custom values. Supported identifiers include Android ID, Advertising ID replies, selected device identity fields, Wi-Fi identifiers, and basic telephony identifiers.
+
+Profiles stay on the device and are shared only through LSPosed local RemotePreferences. The app has no INTERNET permission and includes no telemetry, analytics, ads, crash reporting, update checks, accounts, or remote configuration.
+
+Privacy Kit Lite requires Android 8.0 or newer and an LSPosed-compatible framework. Identifier replacement is best-effort and does not provide app or device isolation.
