@@ -1,12 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A domino/masquerade-style mask: the app's whole purpose is letting an app see a different
+     "face" per profile, so an identity mask reads better than a generic Android/privacy glyph. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#00A676"
-        android:pathData="M54,12 L86,25 L82,55 C79,73 67,87 54,94 C41,87 29,73 26,55 L22,25 Z" />
-    <path
-        android:fillColor="#101418"
-        android:pathData="M40,50 A14,14 0,1 1,68 50 L68,58 L72,58 L72,78 L36,78 L36,58 L40,58 Z M47,50 L61,50 A7,7 0,1 0,47 50 Z" />
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="
+            M27,54
+            C27,54 30,44 37,42
+            C44,40 50,44 54,47
+            C58,44 64,40 71,42
+            C78,44 81,54 81,54
+            C81,54 78,64 71,66
+            C64,68 58,64 54,61
+            C50,64 44,68 37,66
+            C30,64 27,54 27,54
+            Z
+            M48,53 A8,8 0 1,0 32,53 A8,8 0 1,0 48,53 Z
+            M76,53 A8,8 0 1,0 60,53 A8,8 0 1,0 76,53 Z" />
 </vector>

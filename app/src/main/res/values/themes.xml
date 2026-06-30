@@ -1,9 +1,12 @@
-<resources>
-    <style name="Theme.PrivacyKitLite" parent="@android:style/Theme.Material.NoActionBar">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@color/pk_lite_bg</item>
-        <item name="android:statusBarColor">@color/pk_lite_bg</item>
-        <item name="android:colorAccent">@color/pk_lite_accent</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.PrivacyKitLite" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.PrivacyKitLite.Main</item>
+    </style>
+
+    <style name="Theme.PrivacyKitLite.Main" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

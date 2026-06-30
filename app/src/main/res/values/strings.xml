@@ -1,5 +1,4 @@
 <resources>
     <string name="app_name">Privacy Kit Lite</string>
     <string name="xposed_module_description">Basic local-only LSPosed identifier spoofing</string>
-    <string name="profile_enabled">Profile enabled</string>
 </resources>

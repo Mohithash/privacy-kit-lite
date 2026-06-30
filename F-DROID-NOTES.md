@@ -6,14 +6,14 @@ These notes describe the source tree; they are not an F-Droid submission or buil
 
 - Application ID: `com.sal.privacykit.lite`
 - Name: Privacy Kit Lite
-- Version name: `0.2.0`
-- Version code: `2`
+- Version name: `0.3.0`
+- Version code: `3`
 - Minimum SDK: 26
 - Target SDK: 37
 - Compile SDK: 37
 - License: GPL-3.0-or-later
 
-The app requires root and a compatible LSPosed framework to perform its primary function. Any eventual F-Droid metadata should declare the applicable root/dependency anti-feature or requirement according to the policy in effect when submitted.
+The app requires a compatible LSPosed framework to perform its primary function. Any eventual F-Droid metadata should declare the applicable framework/dependency anti-feature or requirement according to the policy in effect when submitted.
 
 ## Build Inputs
 
