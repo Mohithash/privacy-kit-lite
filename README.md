@@ -36,6 +36,13 @@ Supported hooks include:
 
 The connection label reports only whether the app can currently reach the LSPosed service. Privacy Kit Lite does not collect runtime hook events and does not claim that a hook succeeded until the target app calls that API and you verify its result.
 
+## Troubleshooting
+
+- **App not being spoofed?** Make sure the target app is enabled in Privacy Kit Lite's **LSPosed scope** (Add app → approve the scope request, or add it manually in LSPosed), then **restart the app**.
+- **After updating the module**, **re-toggle** Privacy Kit Lite in LSPosed (turn it off, then on) and **force-stop** the target app so the new code loads. If you have no LSPosed Manager, **reboot** instead.
+- **A value still reads real?** Set it to Static or Custom (not Real), then restart the app — some identifiers are only read once at app start.
+- Lite is **LSPosed-only** — there is no native/Zygisk layer, no spoof modes and no kernel module, so hardened apps using native code, attestation or server-side checks can still see through it (see Limitations).
+
 ## Privacy
 
 - No `INTERNET` permission.
